@@ -22,7 +22,6 @@ import platform
 import time
 import sys
 from pathlib import Path
-from typing import List, Dict
 
 # =============================================================================
 # CONFIGURATION
@@ -39,7 +38,7 @@ CLIENT_SECRET = "aaaaaa"
 SITE_ID = "aaaaa"
 
 TARGET_SSID = "SSID Name"
-TARGET_VLAN = xx # Numeric value
+TARGET_VLAN = 00 # Numeric value
 
 VERIFY_SSL = False
 PING_TIMEOUT = 2
@@ -160,7 +159,7 @@ class OmadaAPI:
             endpoints = [
             f"{OMADA_HOST}/openapi/v1/{OMADAC_ID}/sites/{SITE_ID}/clients/{mac}/reconnect",
             #f"{OMADA_HOST}/openapi/v2/{OMADAC_ID}/sites/{SITE_ID}/cmd/reconnect-client",
-            ]   
+            ]
             for url in endpoints:
 
                 logger.debug("Trying reconnect endpoint: %s", url)
