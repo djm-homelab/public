@@ -14,6 +14,7 @@ Requirements:
 
 from ast import match_case
 import logging
+from string import digits
 import requests
 import subprocess
 import platform
@@ -170,7 +171,7 @@ def filter_clients(clients, ssid):
     return out
 
 # =============================================================================
-# Helper functions
+# Menu Handler functions
 # =============================================================================
 
 def authenticate(api: OmadaAPI):
@@ -194,11 +195,16 @@ def get_site_ids(api: OmadaAPI):
 
     print()
 
-    selection = int(input("Select Site ID: ").strip().lower())
-    if (selection < len(sites)):
-        api.site_id = sites[selection].get("siteId")
-        api.site_name = sites[selection].get("name")
-        print(f"{sites[selection].get("name")} (Site ID: {sites[selection].get("siteId")}) selected")
+    selection = input("Select Site ID: ").strip().lower()
+    if selection.isdigit():
+       if int(selection) < len(sites):
+           num_selection = int(selection)
+           api.site_id = sites[num_selection].get("siteId")
+           api.site_name = sites[num_selection].get("name")
+           print(f"{sites[num_selection].get("name")} (Site ID: {sites[num_selection].get("siteId")}) selected")
+       else:
+           print("Bad selection")
+           print()
     else:
         print("Bad selection")
         print()
@@ -215,13 +221,19 @@ def get_ssids(api: OmadaAPI):
         id = s["id"]
         print(f" {index:<3}  | {id:<20} | {name:<20}")
 
-    selection = int(input("Select SSID: ").strip().lower())
-    if (selection < len(ssids)):
-        api.ssid = ssids[selection].get("name")
-        print(f"{ssids[selection].get("name")} (SSID ID: {ssids[selection].get("id")}) selected")
+    selection = input("Select SSID: ").strip().lower()
+    if selection.isdigit():
+       if int(selection) < len(ssids):
+           num_selection = int(selection)
+           api.ssid = ssids[num_selection].get("name")
+           print(f"{ssids[num_selection].get("name")} (SSID ID: {ssids[num_selection].get("id")}) selected")
+       else:
+           print("Bad selection")
+           print()
     else:
         print("Bad selection")
         print()
+
 
 def get_clients(api: OmadaAPI):
     clients = api.get_clients()
@@ -270,8 +282,6 @@ def print_config(api):
     print(f"SITE_ID = \"{api.site_id}\"")
     print(f"TARGET_SSID = \"{api.ssid}\" (note: Enter SSID Name as shown here)")
 
-    handle_exit(api)
-
 def handle_exit(api):
     print("Good bye.")
     return False
@@ -287,7 +297,9 @@ MENU_ACTIONS =  {
     "5" : print_config,
     "q" : handle_exit
 }
-
+# =============================================================================
+# Main
+# =============================================================================\
 def main():
 
     print("Omada watchdog script setup.\nThis script will help set up your own instance of the omadawatchdog script by gathering required IDs from the controller. \nPrior to using this script, you must will need to set up a Client ID, Client secret and get your Omada ID on the target controller. \nThese are located in global settings > Platform Integration > OpenAPI")
