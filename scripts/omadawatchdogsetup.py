@@ -5,28 +5,20 @@
 This script will guide the user through gathering the required identifiers for input into the omadawatchdog.py script.
 
 Usage: run chmod +x and execute.
-Script will prompt for Omada controller details and credentials and allow a user to
+Script will prompt for Omada controller details and credentials and then allow a user to populate sites, SSIDs and client devices.
+Once the user has selected the right parameters for the watchdog script, it will then allow the user to print the relevant details to be input into the omadawatchdog.py script.
 
 Requirements:
 - Prior to running you must have enabled API access to your controller and have set up API client Credentials
--
+    This is done in the omada controller UI from the global settings > Platform Integration > OpenAPI")
 """
-
-from ast import match_case
-import logging
-from string import digits
 import requests
-import subprocess
-import platform
-import time
-import sys
-from pathlib import Path
 import urllib3
 
 VERIFY_SSL = False
+#This suppresses the "Certificate can't be validated" warning when using self signed SSL certs. Can be commented out without affecting functionality. It's really jsut for presentation and assumes that the user knows that their system is using self signed  certs.
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-global API
 # =============================================================================
 # API CLIENT
 # =============================================================================
@@ -62,12 +54,9 @@ class OmadaAPI:
 
         r = self.session.post(url, json=payload)
 
-        #print("[DEBUG AUTH]", r.text)
-
         r.raise_for_status()
 
         data = r.json()
-
         if data.get("errorCode") != 0:
             raise Exception(data)
 
@@ -302,7 +291,7 @@ MENU_ACTIONS =  {
 # =============================================================================\
 def main():
 
-    print("Omada watchdog script setup.\nThis script will help set up your own instance of the omadawatchdog script by gathering required IDs from the controller. \nPrior to using this script, you must will need to set up a Client ID, Client secret and get your Omada ID on the target controller. \nThese are located in global settings > Platform Integration > OpenAPI")
+    print("Omada watchdog script setup.\nThis script will help set up your own instance of the omadawatchdog script by gathering required IDs from the controller. \nPrior to using this script, you will need to set up a Client ID, Client secret and get your Omada ID on the target controller. \nThese are located in global settings > Platform Integration > OpenAPI")
     print()
     api = OmadaAPI()
     is_running = True;
@@ -311,11 +300,14 @@ def main():
         choice = mainmenu(api)
         action = MENU_ACTIONS.get(choice)
         if action:
-            result = action(api)
-            if result==False:
-                is_running=False
+            try:
+                result = action(api)
+                if result == False:
+                    is_running = False
+            except Exception as e:
+                print(f"Whoops, something didn't work. Try again \n Exception details: \n {e}")
         else:
-            print("")
+            print()
             print("Invalid selection. Please try again")
 
 if __name__ == "__main__":
