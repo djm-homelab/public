@@ -10,7 +10,10 @@ import requests
 BASE_URL = "https://www.apsjobs.gov.au"
 SEARCH_URL = f"{BASE_URL}/s/job-search"
 AURA_URL = f"{BASE_URL}/s/sfsites/aura"
-
+#File location for deployment on docker server
+#FILE_LOCATION = "/home/danny/apsscript/"
+# #File Location for use in testing on local machine / laptop.
+FILE_LOCATION="/home/danielmallia/Projects/public/scripts/apsjobsscraper/"
 # Copied from the browser request. These may need refreshing if
 # Salesforce changes its deployed framework version.
 AURA_CONTEXT = {
@@ -38,7 +41,7 @@ DEFAULT_FILTERS = {
     "officeArrangement": None,
     "duration": None,
     "department": None,
-    "category": ["Info Comm Tech (ICT)","Policy","Other Management"],
+    "category": ["Info Comm Tech (ICT)","Policy","Other Management", "Arts, Culture", "Data", "Intelligence"],
     "opportunityType": ["Full-Time"],
     "employmentStatus": ["Ongoing"],
     "state": None,
@@ -53,7 +56,7 @@ DEFAULT_FILTERS = {
     "savedSearchId": None,
 }
 
-
+#This function seems unnecessary and I want to remove it but it but is required to correctly format the date string for the request to the APS Jobs website.
 def js_date_now():
     """Produce the date format used in the captured Aura request."""
     now = datetime.now(ZoneInfo("Australia/Sydney"))
@@ -170,18 +173,18 @@ def retrieve_jobs(offset=0, filters=None):
                 continue
 
             value = action.get("returnValue")
-            print("Return value type:", type(value).__name__)
-            print(json.dumps(value, indent=2, ensure_ascii=False)[:500])
+            #print("Return value type:", type(value).__name__)
+            #print(json.dumps(value, indent=2, ensure_ascii=False)[:500])
 
             num_results = action.get("returnValue").get("returnValue").get("jobListingCount")
-            print(type(action.get("returnValue").get("returnValue").get("jobListings")).__name__)
+            #print(type(action.get("returnValue").get("returnValue").get("jobListings")).__name__)
             for joblisting in action.get("returnValue").get("returnValue").get("jobListings"):
                 return_list.append(joblisting)
 
         offset+= page_size
-        print(f"offset={offset}")
-        print(f"page size={page_size}")
-        print(f"number of results={num_results}")
+        #print(f"offset={offset}")
+        #print(f"page size={page_size}")
+        #print(f"number of results={num_results}")
 
        # joblistings=action.get("returnValue").get("returnValue").get("jobListings");
        # print("break here\n\n\n")
@@ -251,20 +254,30 @@ if __name__ == "__main__":
     jobs = retrieve_jobs(filters=filters)
     remaining_jobs=[]
 
-    filepath = Path("apsjobs-complete.json")
-    htmlfilepath=Path(f"apsjobs-completelist-{js_date_now()}.html")
+    filepath = Path(f"{FILE_LOCATION}/apsjobs-complete.json")
+    htmlfilepath=Path(f"{FILE_LOCATION}/{date.today()} - APS Jobs filtered list.html")
     current_date = date.today()
 
     with htmlfilepath.open(mode="a", encoding="utf-8") as htmlfile:
-        htmlfile.write("<style> table, th, td {border: 1px solid black; border-collapse: collapse;} </style>")
-        htmlfile.write("<H1> New Jobs Today </H1>")
+        htmlfile.write(f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Job search results - {date.today()}</title>
+            <link rel="stylesheet" href="style.css">.
+            </head>
+            <h1> Jobsearch results for {date.today()} </H1>
+            """)
+        htmlfile.write("<H2> New Jobs Today </H2>")
 
         for job in jobs:
             title= job.get("jobName")
             postedDate = date.fromisoformat(job.get("jobPostedDate"))
             if (("Section 26") in title) or ("Temporary" in title) or ("26" in title):
                 continue
-            print(f"current date: {current_date}, posted date: {postedDate}")
+            #print(f"current date: {current_date}, posted date: {postedDate}")
             if postedDate == current_date:
                 htmlfile.write(formatJobHtml(job))
             else:
@@ -272,7 +285,7 @@ if __name__ == "__main__":
 
 
 
-        htmlfile.write("<H1> Jobs Closing Soon (Next 7 days) </H1>")
+        htmlfile.write("<H2> Jobs Closing Soon (Next 7 days) </H2>")
 
         for job in closing_soon:
             current_date = date.today()
@@ -281,16 +294,15 @@ if __name__ == "__main__":
                 continue
             htmlfile.write(formatJobHtml(job))
 
-        htmlfile.write("<H1> All jobs meeting criteria</H1>")
+        htmlfile.write("<H2> All jobs meeting criteria</H2>")
         for job in remaining_jobs:
             title= job.get("jobName")
             if (("Section 26") in title) or ("Temporary" in title) or ("26" in title):
                 continue
 
-            htmlfile.write("<style> table, th, td {border: 1px solid black; border-collapse: collapse;} </style>")
             htmlfile.write(formatJobHtml(job))
 
-        indexfilepath=Path("index.html")
+        indexfilepath=Path(f"{FILE_LOCATION}/index.html")
         shutil.copy(htmlfilepath,indexfilepath)
 
 
